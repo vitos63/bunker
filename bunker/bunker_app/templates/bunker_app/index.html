@@ -1,0 +1,10 @@
+
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<img src="{% static '/bunker/index.jpg' %}" width="100%" height="900">
+<div class="main-container">
+    <h1>{{ object_list.name }}</h1>
+    <h2>{{ object_list.info|linebreaks }}</h2> 
+</div>
+{% endblock %}
