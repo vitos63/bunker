@@ -1,11 +1,14 @@
 from random import randint
-from .models import Health
+from .models import Health, Logs
 from django.db.models import Q, Min, Sum
 from django.db.models.query import QuerySet
+import redis
+
+redis_client = redis.StrictRedis(host ='localhost', port=6379, db=0)
 
 class Calculation():
-    def __init__(self, members:QuerySet, disaster:str):
-        self.logs = []
+    def __init__(self, members:QuerySet, disaster:str, session_key:str):
+        self.session_key = session_key
         self.members = members
         self.disaster = disaster
         self.members_professions = members.values_list('profession__profession_ru', flat=True)
@@ -18,43 +21,45 @@ class Calculation():
     def remark(self):
         if 'Уролог' in self.members_professions:
             self.members.filter(sex='Man barren').update(sex='Man')
-            self.logs.append('Все мужчины излечились от бесплодия, потому что есть Уролог')
+            redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'urologist').consequences)
     
         if 'Онколог' in self.members_professions:
             self.members.filter(health__health_ru='Рак').update(health=self.perfect_health)
-            self.logs.append('Все больные раком излечились, потому что есть Онколог')
+            redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'oncologist').consequences)
     
         if 'Гинеколог' in self.members_professions:
             self.members.filter(sex='Woman barren').update(sex='Woman')
-            self.logs.append('Все бесплодные женщины стали нормальными, потому что есть Гинеколог')
+            redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'gynecologist').consequences)
     
         if 'Психолог' in self.members_hobbii:
             self.members.filter(health__health_ru='Суицидальные наклонности').update(health=self.perfect_health)
             self.members.update(phobia=None)
-            self.logs.append('Суицидники излечились и пропали фобии, потому что есть Психолог')
+            redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'psychologist').consequences)
     
         if 'Проходил курсы урологии' in self.members_facts:
             min_age = self.members.filter(sex='Man barren').aggregate(Min('age'))['age__min']
             young_man = self.members.filter(sex='Man barren', age=min_age)
-            young_man.update(sex='Man')
-            self.logs.append(f'Игрок {young_man.name} излечился от бесплодия, потому что есть человек, проходивший курсы урологии')
+            if young_man:
+                redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'urolog_course').consequences.format(name=young_man[0].name))
+                young_man.update(sex='Man')
 
         if 'Проходил курсы гинекологии' in self.members_facts:
             min_age = self.members.filter(sex='Woman barren').aggregate(Min('age'))['age__min']
             young_woman = self.members.filter(sex='Woman barren', age=min_age)
-            young_woman.update(sex='Woman')
-            self.logs.append(f'Игрок {young_woman.name} излечился от бесплодия, потому что есть человек, проходивший курсы гинекологии')
+            if young_woman:
+                redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'gynecolog_course').consequences.format(name=young_woman[0].name))               
+                young_woman.update(sex='Woman')
         
         if 'Пчеловод' in self.members_professions:
             apiphobia = self.members.filter(phobia__phobia_ru='Апифобия')
             for i in apiphobia:
-                self.logs.append(f'Игрок {i.name} умер от Апифобии, потому что есть Пчеловод')
+                redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'bee_keeper').consequences.format(name=i.name))
             apiphobia.update(alive=False)
         
         if 'Клоун' in self.members_professions:
             clown =self.members.filter(phobia__phobia_ru='Клоунофобия')
             for i in clown:
-                self.logs.append(f'Игрок {i.name} умер от Клоунофобии, потому что в бункере есть Клоун')        
+                redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'clown').consequences.format(name=i.name))
             clown.update(alive=False)
         
         if 'Переводчик' in self.members_professions or 'Знает 5 языков' in self.members_facts:
@@ -64,33 +69,33 @@ class Calculation():
         if self.disaster=='Ядерная зима':
             criophobia = self.members.filter(phobia__phobia_ru='Криофобия')
             for i in criophobia:
-                self.logs.append(f'Игрок {i.name} умирает от Криофобии, потому что катастрофа {self.disaster}')
+                redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'nuclear_winter_kill').consequences.format(name=i.name, disaster = self.disaster))
             criophobia.update(alive=False)
             self.members.filter(phobia__phobia_ru='Гелиофобия').update(phobia=None)
-            self.logs.append(f'Гелиофобия больше не смертельна, потому что катастрофа {self.disaster}')
+            redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'nuclear_winter_heal').consequences.format(disaster = self.disaster))
         
-        if self.disaster=='Наводнение':
+        elif self.disaster=='Наводнение':
             aquaphobia = self.members.filter(phobia__phobia_ru='Аквафобия')
             for i in aquaphobia:
-                self.logs.append(f'Игрок {i.name} умирает от Аквафобии, потому что катастрофа {self.disaster}')
+                redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'flood').consequences.format(name = i.name,disaster = self.disaster))
             aquaphobia.update(alive=False)
         
-        if self.disaster=='Пришествие дьявола':
+        elif self.disaster=='Пришествие дьявола':
             devilphobia = self.members.filter(phobia__phobia_ru='Демонофобия')
             for i in devilphobia:
-                self.logs.append(f'Игрок {i.name} умирает от Демонофобии, потому что катастрофа {self.disaster}')
+                redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'the_coming_of_the_devil').consequences.format(name = i.name,disaster = self.disaster))
             devilphobia.update(alive=False)
         
-        if self.disaster=='Засуха':
+        elif self.disaster=='Засуха':
             termo_aridito_phobia =self.members.filter(Q(phobia__phobia_ru='Термофобия') | Q(phobia__phobia_ru='Аридитафобия'))
             for i in termo_aridito_phobia:
-                self.logs.append(f'Игрок {i.name} умирает от {i.phobia.phobia_ru}, потому что катастрофа {self.disaster}')
+                redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'the_coming_of_the_devil').consequences.format(name = i.name, phobia=i.phobia.phobia_ru, disaster = self.disaster))
             termo_aridito_phobia.update(alive=False)
         
-        if self.disaster=='Инопланетяне':
+        elif self.disaster=='Инопланетяне':
             ufophobia = self.members.filter(phobia__phobia_ru='Уфофобия')
             for i in ufophobia:
-                self.logs.append(f'Игрок {i.name} умирает от Уфофобии, потому что катастрофа {self.disaster}')
+                redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'aliens').consequences.format(name = i.name, disaster = self.disaster))
             ufophobia.update(alive=False)
 
     
@@ -101,35 +106,35 @@ class Calculation():
             if current.fatal or (i.phobia and i.phobia.fatal):
                 self.members.filter(pk=i.pk).update(alive=False)
                 if current.fatal:
-                    self.logs.append(f'Игрок {i.name} умер, из-за болезни {current.health_ru}')
+                    redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'fatal_illness').consequences.format(name = i.name, health = i.health.health_ru))
                 else:
-                    self.logs.append(f'Игрок {i.name} умер, из-за фобии {i.phobia.phobia_ru}')
+                    redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'fatal_phobia').consequences.format(name = i.name, phobia = i.phobia.phobia_ru))
             
             elif current.health_ru=='Шизофрения':
                     for j in self.members.filter(alive=True):
                         if j.pk!=i.pk:
                             j.alive = False if randint(1,100)<i.stage else True
                             if not j.alive:
-                                self.logs.append(f'Игрок {j.name} умер из-за Шизофрении')
+                                redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'schizophrenia').consequences.format(name = i.name))
                             j.save()
 
             elif current.with_stage and randint(1,100)<i.stage:
                 self.members.filter(pk=i.pk).update(alive=False)
-                self.logs.append(f'Игрок {i.name} умер из-за болезни {current.health_ru}')
+                redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'fatal_illness').consequences.format(name = i.name, health = i.health.health_ru))
                 
             elif current.infected:
                 if current.health_ru!='СПИД открытый':
                     for j in self. members.filter(alive=True):
                         if j.health.health_ru != current.health_ru and randint(0,1):
-                            self.logs.append(f'Игрок {j.name} заразился болезнью {current.health_ru}')
+                            redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'infected_illness').consequences.format(name = i.name, health = i.health.health_ru))
                             j.infection = j.infection + f', {current}' if j.infection else f'{current.health_ru}'
                             j.alive = False if randint(1,100)<70 else True
                             if not j.alive:
-                                self.logs.append(f'Игрок {j.name} умер от болезни {current.health_ru}')
+                                redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'fatal_illness').consequences.format(name = i.name, health = i.health.health_ru))
                             j.save()
                 alive = False if randint(1,100)<70 else True
                 if not alive:
-                    self.logs.append(f'Игрок {i.name} умер от болезни {current.health_ru}')
+                    redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'fatal_illness').consequences.format(name = i.name, health = i.health.health_ru))
                 self.members.filter(pk=i.pk).update(alive=alive)
     
     def breeding_score(self):
@@ -161,40 +166,44 @@ class Calculation():
     
 
 
-def total_score(members,disaster):
-    calculated_characteristics = Calculation(members, disaster)
+def total_score(members,disaster, session_key):
+    calculated_characteristics = Calculation(members, disaster, session_key)
     calculated_characteristics.remark()
     calculated_characteristics.contamination()
     breeding_points = calculated_characteristics.breeding_score() // members.all().count()
     survival_points = calculated_characteristics.survival_score() // members.all().count()
-    logs = calculated_characteristics.logs
+    logs = [i.decode('utf-8') for i in redis_client.lrange(session_key, 0, -1)]
+    redis_client.expire(session_key, 1800)
 
     return breeding_points, survival_points, logs
 
 
 def reproduction(members, breeding_points, bunker_alive):
-    chance_breed = 'Шанс размножения после выхода из бункера 0 %'
-    bunker_breed = 'Бункер не размножился'
+    chance_breed = Logs.objects.get(occassion='breed_per_cent_0').consequences
+    bunker_breed = Logs.objects.get(occassion='bunker_not_breed').consequences
     members_count = members.filter(alive=True).count() 
-    if bunker_alive=='Бункер выжил' and members_count>1 and members.filter(sex='Man').exists() and members.filter(sex='Woman').exists():
+    if bunker_alive==Logs.objects.get(occassion='bunker_alive').consequences and members_count>1 and members.filter(sex='Man').exists() and members.filter(sex='Woman').exists():
         if members_count%2==0:
-            perfect_breed = 25*members_count//2
-            chance_breed = (f'Шанс размножения после выхода из бункера {round(breeding_points/(perfect_breed/100),1)}%')
+            perfect_breed = (25*members_count//2)
+            breed_per_cent = round(breeding_points/(perfect_breed/100),1)
+            chance_breed = Logs.objects.get(occassion='breed_per_cent').consequences.format(breed_per_cent=min(breed_per_cent,100))
         else:
             perfect_breed = 10*members_count//2 + 15*(members_count//2 + 1)
-            chance_breed = (f'Шанс размножения после выхода из бункера {round(breeding_points/(perfect_breed/100),1)}%')
+            breed_per_cent = round(breeding_points/(perfect_breed/100),1)
+            chance_breed = Logs.objects.get(occassion='breed_per_cent').consequences.format(breed_per_cent=min(breed_per_cent,100))
         if randint(1,perfect_breed)<breeding_points:
-            bunker_breed = 'Бункер размножился'
+            bunker_breed =Logs.objects.get(occassion='bunker_breed').consequences
     return chance_breed, bunker_breed
 
 
 def survival(members, survival_points):
-    bunker_alive = 'Бункер не выжил'
-    chance_survive = 'Шанс выживания игроков в бункере 0 %' 
+    bunker_alive = Logs.objects.get(occassion='bunker_dead').consequences
+    chance_survive = Logs.objects.get(occassion='survive_per_cent_0').consequences
     if members.filter(alive=True).exists():
-        chance_survive = (f'Шанс выживания игроков в бункере {round(survival_points/(55/100),1)}%')
+        survive_per_cent = round(survival_points/(55/100),1)
+        chance_survive = Logs.objects.get(occassion='survive_per_cent').consequences.format(survive_per_cent=min(survive_per_cent,100))
         if randint(1,55)<survival_points:
-            bunker_alive = 'Бункер выжил'
+            bunker_alive = Logs.objects.get(occassion='bunker_alive').consequences
     return chance_survive, bunker_alive
 
 
@@ -202,13 +211,14 @@ def context(members,survival_points,breeding_points, logs):
     chance_survive, bunker_alive = survival(members=members, survival_points=survival_points)
     chance_breed, bunker_breed = reproduction(members=members, breeding_points=breeding_points, bunker_alive=bunker_alive)
 
-    return {'breeding_points' : breeding_points, 
-    'survival_points' : survival_points, 
-    'members_alive':members.filter(alive=True), 
-    'members_dead':members.filter(alive=False),
-    'logs':logs,
+    return {
+    'breeding_points' : breeding_points, 
+    'survival_points': survival_points, 
+    'members_alive': members.filter(alive=True), 
+    'members_dead': members.filter(alive=False),
+    'logs': logs,
     'chance_survive': chance_survive,
-    'bunker_alive':bunker_alive,
-    'chance_breed':chance_breed,
-    'bunker_breed' :bunker_breed,
+    'bunker_alive': bunker_alive,
+    'chance_breed': chance_breed,
+    'bunker_breed': bunker_breed,
     }

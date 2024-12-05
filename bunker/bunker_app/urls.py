@@ -10,5 +10,4 @@ urlpatterns = [
     path('rules/',  cache_page(60 * 1440)(views.Rules.as_view()), name='rules'),
     path('characteristics/',  cache_page(60 * 1440)(views.DescriptionCharacteristics.as_view()), name='characteristics'),
     path('feedback/',  cache_page(60 * 1440)(views.Feedback.as_view()), name='feedback'),
-
 ]

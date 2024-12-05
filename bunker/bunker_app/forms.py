@@ -41,3 +41,4 @@ class RequiredFormSet(forms.BaseFormSet):
         super(RequiredFormSet, self).__init__(*args, **kwargs)
         for form in self.forms:
             form.empty_permitted = False
+

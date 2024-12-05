@@ -2,8 +2,10 @@
 {% load static %}
 {% block content %}
 <div class="main-container">
-<h1>{{feedback.name}}<h1>
-    <h2>{{feedback.info}}</h2>
+{% for i in feedback %}
+<h1>{{i.name}}<h1>
+    <h2>{{i.info}}</h2>
+{% endfor  %}
 </div>
 <div class="image-container">
     <div class="image-row">
