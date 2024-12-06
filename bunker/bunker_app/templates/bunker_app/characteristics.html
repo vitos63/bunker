@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
     <div class="navigation-container">
         <ul>
@@ -11,6 +12,7 @@
 
 
     <div class="info-container" id="section-{{ rule.info }}">
+        <a href="{% static 'bunker/cards.zip' %}" download><h1>Карточки для игры достпуны по ссылке</h1></a>
         <h1 id="unique-paragraph">Описание характеристик</h1>
         {% for char in characteristics %}
             <div id="section-{{ char.characteristic }}">

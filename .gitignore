@@ -1,6 +1,8 @@
 djvenv/
 .env
 .vscode/
-sitewomen/db.json
-sitewomen/db.sqlite3
+bunker/bunker_app/fixtures
+
+
+
 
