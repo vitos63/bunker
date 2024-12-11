@@ -1,0 +1,53 @@
+services:
+  web:
+    build: .
+    command: >
+      sh -c "python manage.py migrate &&
+      python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    environment:
+      USER_BUNKER: ${USER_BUNKER}
+      USER_PASSWORD: ${USER_PASSWORD}
+      NAME_BUNKER: ${NAME_BUNKER}
+      REDIS_HOST: ${REDIS_HOST}
+      DJANGO_DB_HOST: db 
+    depends_on:
+      - db
+      - redis
+    restart: unless-stopped
+
+  db:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${USER_BUNKER}
+      POSTGRES_PASSWORD: ${USER_PASSWORD}
+      POSTGRES_DB: ${NAME_BUNKER}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "${NAME_BUNKER}", "-U", "${USER_BUNKER}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+  
+  celery:
+    build: .
+    command: celery -A bunker worker --beat --loglevel=info
+    depends_on:
+      - redis
+    environment:
+      - DJANGO_SETTINGS_MODULE=bunker.settings
+    volumes:
+      - .:/app
+    
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+volumes:
+  db_data:

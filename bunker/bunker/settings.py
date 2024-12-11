@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-!f(%11k3ev33ac8e6#0rart4frlq72+08%c0i$ae&)f5m5+)d5'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -92,7 +92,8 @@ DATABASES = {
         'NAME': env('NAME_BUNKER'),
         'USER': env('USER_BUNKER'),
         'PASSWORD': env('USER_PASSWORD'),
-        'HOST': 'localhost',
+        #'HOST': 'localhost',
+        'HOST': env('DJANGO_DB_HOST'),
         'PORT': 5432,
     }
 }
@@ -101,7 +102,8 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379",
+        #"LOCATION": "redis://127.0.0.1:6379",
+        "LOCATION": "redis://redis:6379",
     }
 }
 
@@ -162,10 +164,11 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
+#CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = 'redis://redis:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
 
 
 MEDIA_ROOT = BASE_DIR / 'media'

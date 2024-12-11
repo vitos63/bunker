@@ -1,1 +1,0 @@
-web: gunicorn bunker.wsgi --log-file -
