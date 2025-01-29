@@ -30,7 +30,8 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+
 INTERNAL_IPS = ['127.0.0.1',]
 
 
@@ -100,7 +101,7 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
        #"LOCATION": "redis://127.0.0.1:6379", # для запуска на локальлом хосте
-        "LOCATION": "redis://bunker-redis-1:6379", # для запуска в Docker контейнере
+       "LOCATION": "redis://bunker-redis-1:6379", # для запуска в Docker контейнере
     }
 }
 

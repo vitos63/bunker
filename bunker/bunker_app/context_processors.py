@@ -1,4 +1,5 @@
 from .models import Menu
+
 def get_custom_context(request):
     menu = []
     for i in Menu.objects.all():
