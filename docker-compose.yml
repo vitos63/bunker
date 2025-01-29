@@ -2,7 +2,7 @@ services:
   web:
     build: .
     command: >
-      sh -c "python manage.py migrate &&
+      sh -c "./entrypoint.sh &&
       python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
@@ -10,7 +10,7 @@ services:
       USER_BUNKER: ${USER_BUNKER}
       USER_PASSWORD: ${USER_PASSWORD}
       NAME_BUNKER: ${NAME_BUNKER}
-      REDIS_HOST: ${REDIS_HOST}
+      REDIS_HOST: redis
       DJANGO_DB_HOST: db 
     depends_on:
       - db
@@ -46,8 +46,13 @@ services:
 
   redis:
     image: redis:latest
+    container_name: bunker-redis-1
     ports:
       - "6379:6379"
+    volumes:
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    
 
 volumes:
   db_data:

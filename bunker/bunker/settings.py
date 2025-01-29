@@ -50,7 +50,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    #'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -80,7 +79,6 @@ TEMPLATES = [
     },
 ]
 
-# WSGI_APPLICATION = 'wsgi.application'
 
 
 # Database
@@ -92,18 +90,17 @@ DATABASES = {
         'NAME': env('NAME_BUNKER'),
         'USER': env('USER_BUNKER'),
         'PASSWORD': env('USER_PASSWORD'),
-        #'HOST': 'localhost',
-        'HOST': env('DJANGO_DB_HOST'),
+        #'HOST': 'localhost', # для запуска на локальном хосте
+        'HOST': env('DJANGO_DB_HOST'), # для запуска в Docker контейнере
         'PORT': 5432,
     }
 }
 
-
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        #"LOCATION": "redis://127.0.0.1:6379",
-        "LOCATION": "redis://redis:6379",
+       #"LOCATION": "redis://127.0.0.1:6379", # для запуска на локальлом хосте
+        "LOCATION": "redis://bunker-redis-1:6379", # для запуска в Docker контейнере
     }
 }
 
@@ -164,11 +161,10 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-#CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_BROKER_URL = 'redis://redis:6379/0'
+CELERY_BROKER_URL = 'redis://bunker-redis-1:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+CELERY_RESULT_BACKEND = 'redis://bunker-redis-1:6379/0'
 
 
 MEDIA_ROOT = BASE_DIR / 'media'
