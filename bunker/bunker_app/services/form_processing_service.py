@@ -1,19 +1,16 @@
 from bunker_app.forms import FormMember, RequiredFormSet
 from django.forms import formset_factory
-from bunker_app.services.session_service import MemberSessionSevice
+from bunker_app.services.session_service import MemberSessionSevice, SessionService
 
 
 class FormProcessing:
 
-    def __init__(self,session_key, post_data = None):
+    def init(self,session_key, members_count, post_data = None):
 
         self.session_key = session_key
         self.post_data = post_data
-        self.formset_factory = formset_factory(FormMember, formset=RequiredFormSet, extra=self.get_extra_context())
+        self.formset_factory = formset_factory(FormMember, formset=RequiredFormSet, extra=members_count)
 
-    def get_extra_context(self):
-        return self.post_data.get('members_count',0) if self.post_data else 0
-    
     def is_valid(self):
         self.formset = self.formset_factory(self.post_data)
         return self.formset.is_valid()
@@ -24,5 +21,3 @@ class FormProcessing:
     
     def render_form(self):
         return self.formset_factory
-
-             

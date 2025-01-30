@@ -57,7 +57,7 @@ def members_forms(request):
     member_session = MemberSessionSevice(session_service.get_user_session_key())
     member_session.delete_member_session_key()
 
-    form_processing_service = FormProcessing(session_service.get_user_session_key(), request.POST)
+    form_processing_service = FormProcessing(session_service.get_user_session_key(), session_service.get_any_session_key('members_count'), request.POST)
     
     if request.method == 'POST':
         session_service.set_any_session_key('came_from_redirect', True)
@@ -73,7 +73,6 @@ def members_forms(request):
         
         session_service.set_any_session_key('came_from_redirect', False)
     return render(request, 'bunker_app/members_forms.html', {'title': 'Характеристики игроков','formset':form_processing_service.render_form()})
-
 
 def calculation(request):
     session_service = SessionService(request.session)
