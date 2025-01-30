@@ -1,12 +1,11 @@
 from django.shortcuts import render, redirect
 from django.views.generic import ListView
-from bunker_app.forms import FormMember, MembersCount, RequiredFormSet
+from bunker_app.forms import MembersCount
 from django.urls import reverse_lazy,reverse
 from bunker_app.models import MemberCharact, Disasters, Characteristics, Rules, Information
 from bunker_app.services.calculation import total_score, context, redis_client
 from bunker_app.services.session_service import SessionService, MemberSessionSevice
 from bunker_app.services.form_processing_service import FormProcessing
-from django.forms import formset_factory
 from django.views.generic import FormView
 
 
@@ -82,7 +81,7 @@ def calculation(request):
         return redirect(reverse('count'))
     
     session_service.del_any_session_key('came_from_redirect')
-    redis_client.delete(request.session.session_key)
+    redis_client.delete(session_service.get_user_session_key)
     
     disaster = session_service.get_any_session_key('disaster')
     members = MemberCharact.objects.filter(session_key = session_service.get_user_session_key())
