@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect
 from django.views.generic import ListView
-from .forms import FormMember, MembersCount, RequiredFormSet
+from bunker_app.forms import FormMember, MembersCount, RequiredFormSet
 from django.urls import reverse_lazy,reverse
-from .models import MemberCharact, Disasters, Characteristics, Rules, Information
-from .utils import total_score, context, redis_client
+from bunker_app.models import MemberCharact, Disasters, Characteristics, Rules, Information
+from bunker_app.services.calculation import total_score, context, redis_client
 from django.forms import formset_factory
 from django.views.generic import FormView
 
@@ -62,6 +62,7 @@ def members_forms(request):
                 member.session_key = request.session.session_key  
                 member.save()  
         return redirect(reverse('calculat'))
+    
     else:
         if not request.session.get('came_from_redirect'):
             return redirect(reverse('count'))

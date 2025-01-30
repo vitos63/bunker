@@ -1,6 +1,5 @@
-from typing import Any
 from django import forms
-from .models import MemberCharact, Profession, Health, Hobbii, Phobia, Baggage, Fact, Disasters
+from bunker_app.models import MemberCharact, Profession, Health, Hobbii, Phobia, Baggage, Fact, Disasters
 from django.core.exceptions import ValidationError
 
 

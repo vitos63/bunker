@@ -91,8 +91,8 @@ DATABASES = {
         'NAME': env('NAME_BUNKER'),
         'USER': env('USER_BUNKER'),
         'PASSWORD': env('USER_PASSWORD'),
-        #'HOST': 'localhost', # для запуска на локальном хосте
-        'HOST': env('DJANGO_DB_HOST'), # для запуска в Docker контейнере
+        'HOST': 'localhost', # для запуска на локальном хосте
+        #'HOST': env('DJANGO_DB_HOST'), # для запуска в Docker контейнере
         'PORT': 5432,
     }
 }
@@ -100,8 +100,8 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-       #"LOCATION": "redis://127.0.0.1:6379", # для запуска на локальлом хосте
-       "LOCATION": "redis://bunker-redis-1:6379", # для запуска в Docker контейнере
+       "LOCATION": "redis://127.0.0.1:6379", # для запуска на локальлом хосте
+       #"LOCATION": "redis://bunker-redis-1:6379", # для запуска в Docker контейнере
     }
 }
 

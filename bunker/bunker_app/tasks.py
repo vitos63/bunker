@@ -1,7 +1,7 @@
 from celery import shared_task
 from datetime import timedelta
 from django.utils import timezone
-from .models import MemberCharact
+from bunker_app.models import MemberCharact
 from django.contrib.sessions.models import Session
 
 

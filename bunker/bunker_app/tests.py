@@ -2,8 +2,8 @@ from django.test import TestCase
 from http import HTTPStatus
 from random import randint, choice
 from django.urls import reverse
-from .models import *
-from .forms import FormMember, RequiredFormSet
+from bunker_app.models import Profession, Health, Hobbii, Phobia, Baggage, Fact, Disasters
+from bunker_app.forms import FormMember, RequiredFormSet
 from django.forms import formset_factory
 
 class GetPagesTestCase(TestCase):

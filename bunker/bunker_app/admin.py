@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import *
+from bunker_app.models import Menu, Profession, Information, Rules, Characteristics, Health, Hobbii, Phobia, Baggage, Fact, Disasters, Logs
 
 
 @admin.register(Information, Rules)

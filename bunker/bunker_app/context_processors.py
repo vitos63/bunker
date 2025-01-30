@@ -1,4 +1,4 @@
-from .models import Menu
+from bunker_app.models import Menu
 
 def get_custom_context(request):
     menu = []
