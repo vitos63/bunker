@@ -41,11 +41,12 @@ class Count(FormView):
     form_class = MembersCount
     template_name = 'bunker_app/count_disaster.html'
     extra_context ={'title':'Количество игроков'}
-    success_url = reverse_lazy('members_forms') 
+    success_url = reverse_lazy('members_forms')
     def form_valid(self, form):
-        self.request.session['came_from_redirect'] = True
-        self.request.session['disaster'] = Disasters.objects.get(disaster_ru=form.cleaned_data['disaster']).disaster_ru
-        self.request.session['members_count'] = form.cleaned_data['members_count']
+        session_service = SessionService(self.request.session)
+        session_service.set_any_session_key('came_from_redirect', True)
+        session_service.set_any_session_key('disaster', Disasters.objects.get(disaster_ru=form.cleaned_data['disaster']).disaster_ru)
+        session_service.set_any_session_key('members_count', form.cleaned_data['members_count'])
         return super().form_valid(form)
 
 
@@ -81,7 +82,7 @@ def calculation(request):
         return redirect(reverse('count'))
     
     session_service.del_any_session_key('came_from_redirect')
-    redis_client.delete(session_service.get_user_session_key)
+    redis_client.delete(request.session.session_key)
     
     disaster = session_service.get_any_session_key('disaster')
     members = MemberCharact.objects.filter(session_key = session_service.get_user_session_key())
