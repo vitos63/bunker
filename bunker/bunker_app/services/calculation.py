@@ -3,6 +3,7 @@ from bunker_app.models import Health, Logs
 from django.db.models import Q, Min, Sum
 from django.db.models.query import QuerySet
 import redis
+from typing import Tuple
 
 redis_client = redis.StrictRedis(host ='localhost', port=6379, db=0)
 
@@ -137,7 +138,7 @@ class Calculation():
                     redis_client.rpush(self.session_key, Logs.objects.get(occassion = 'fatal_illness').consequences.format(name = member.name, health = member.health.health_ru))
                 self.members.filter(pk=member.pk).update(alive=alive)
     
-    def breeding_score(self):
+    def breeding_score(self) -> int:
         breeding_points=0
         breeding_points+=self.members.aggregate(Sum('baggage__breeding_points'))['baggage__breeding_points__sum']
         members_alive=self.members.filter(alive=True)
@@ -151,7 +152,7 @@ class Calculation():
         return breeding_points
     
 
-    def survival_score(self):
+    def survival_score(self) -> int:
         survival_points = 0
         survival_points += self.members.aggregate(Sum('baggage__survival_points'))['baggage__survival_points__sum']
         members_alive = self.members.filter(alive=True)
@@ -166,7 +167,7 @@ class Calculation():
     
 
 
-def total_score(members,disaster, session_key):
+def total_score(members:QuerySet,disaster:str, session_key:str) -> Tuple[int, int, list]:
     calculated_characteristics = Calculation(members, disaster, session_key)
     calculated_characteristics.remark()
     calculated_characteristics.contamination()
@@ -178,7 +179,7 @@ def total_score(members,disaster, session_key):
     return breeding_points, survival_points, logs
 
 
-def reproduction(members, breeding_points, bunker_alive):
+def reproduction(members:QuerySet, breeding_points:int, bunker_alive:str) -> Tuple[float, str]:
     chance_breed = Logs.objects.get(occassion='breed_per_cent_0').consequences
     bunker_breed = Logs.objects.get(occassion='bunker_not_breed').consequences
     members_count = members.filter(alive=True).count() 
@@ -196,7 +197,7 @@ def reproduction(members, breeding_points, bunker_alive):
     return chance_breed, bunker_breed
 
 
-def survival(members, survival_points):
+def survival(members:QuerySet, survival_points:int) -> Tuple[float, str]:
     bunker_alive = Logs.objects.get(occassion='bunker_dead').consequences
     chance_survive = Logs.objects.get(occassion='survive_per_cent_0').consequences
     if members.filter(alive=True).exists():
@@ -207,7 +208,7 @@ def survival(members, survival_points):
     return chance_survive, bunker_alive
 
 
-def context(members,survival_points,breeding_points, logs):
+def context(members:QuerySet,survival_points:int,breeding_points:int, logs:list) -> dict:
     chance_survive, bunker_alive = survival(members=members, survival_points=survival_points)
     chance_breed, bunker_breed = reproduction(members=members, breeding_points=breeding_points, bunker_alive=bunker_alive)
 
